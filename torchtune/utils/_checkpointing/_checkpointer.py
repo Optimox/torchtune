@@ -387,7 +387,13 @@ class FullModelHFCheckpointer(_CheckpointerInterface):
             gc.collect()
 
         if self._model_type == ModelType.PHI3_MINI:
-            converted_state_dict[utils.MODEL_KEY] = phi3_hf_to_tune(merged_state_dict)
+            converted_state_dict[utils.MODEL_KEY] = phi3_hf_to_tune(
+                merged_state_dict,
+                head_dim=self._config["hidden_size"]
+                // self._config["num_attention_heads"],
+                num_heads=self._config["num_attention_heads"],
+                num_kv_heads=self._config["num_key_value_heads"],
+            )
         elif self._model_type == ModelType.MISTRAL_REWARD:
             converted_state_dict[utils.MODEL_KEY] = mistral_reward_hf_to_tune(
                 merged_state_dict,

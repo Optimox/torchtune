@@ -24,7 +24,12 @@ _PHI3_MINI = {
 }
 
 
-def phi3_hf_to_tune(state_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+def phi3_hf_to_tune(
+    state_dict: Dict[str, torch.Tensor],
+    head_dim: int,
+    num_heads: int,
+    num_kv_heads: int,
+) -> Dict[str, torch.Tensor]:
     """
     Convertor from HF state dict to torchtune state dict. This handles:
     - Splitting the fused q,k and v matrix
@@ -32,17 +37,23 @@ def phi3_hf_to_tune(state_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tens
     """
     converted_state_dict = {}
 
+    qsize = num_heads * head_dim
+    kv_size = num_kv_heads * head_dim
     for key, value in state_dict.items():
         new_key = get_mapped_key(key, _PHI3_MINI)
         if "qkv" in key:
-            (
-                q,
-                k,
-                v,
-            ) = value.chunk(3, dim=0)
-            converted_state_dict[new_key] = q
-            converted_state_dict[new_key.replace("q_proj", "k_proj")] = k
-            converted_state_dict[new_key.replace("q_proj", "v_proj")] = v
+            # (
+            #     q,
+            #     k,
+            #     v,
+            # ) = value.chunk(3, dim=0)
+            converted_state_dict[new_key] = value[:qsize, :]
+            converted_state_dict[new_key.replace("q_proj", "k_proj")] = value[
+                qsize : qsize + kv_size, :
+            ]
+            converted_state_dict[new_key.replace("q_proj", "v_proj")] = value[
+                qsize + kv_size :, :
+            ]
         elif "gate" in key:
             w1, w3 = value.chunk(2, dim=0)
             converted_state_dict[new_key] = w1
