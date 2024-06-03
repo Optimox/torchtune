@@ -356,7 +356,7 @@ class PyramidTransformerDecoder(nn.Module):
             # shape: [b, s, d]
             if prev_h is not None:
                 hidden_representations.append(h)
-                prev_h = 1
+            prev_h = 1
             h = layer(h, mask, input_pos)
 
         # shape: [b, s, d]
