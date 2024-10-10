@@ -70,9 +70,80 @@ class TransformerDecoderLayer(nn.Module):
         # Residual connection; shape: [b, s, d]
         h = attn_out + x
 
-        # Norm applied before the feedforward layer
+        # Norm applied before the feedforward layer :
+        # TODO IS THERE AN ERROR HERE ? why would mlp norm be before the res connection ?
         mlp_out = self.mlp(self.mlp_norm(h))
 
+        # Residual connection; shape: [b, s, d]
+        out = h + mlp_out
+        return out
+
+
+class Gemma2TransformerDecoderLayer(nn.Module):
+    """Transformer layer derived from the Gemma2 model. Normalization is applied before the attention **and** FF layer.
+
+    Args:
+        attn (CausalSelfAttention): Attention module.
+        mlp (nn.Module): Feed-forward module.
+        sa_norm (nn.Module): Normalization to be applied before self-attention.
+        mlp_norm (nn.Module): Normalization to be applied before the feed-forward layer.
+    """
+
+    def __init__(
+        self,
+        attn: CausalSelfAttention,
+        mlp: nn.Module,
+        sa_norm: nn.Module,
+        mlp_norm: nn.Module,
+        pre_feedforward_layernorm: nn.Module,
+        post_feedforward_layernorm: nn.Module,
+    ) -> None:
+        super().__init__()
+        self.sa_norm = sa_norm
+        self.attn = attn
+        self.mlp_norm = mlp_norm
+        self.mlp = mlp
+        self.post_feedforward_layernorm = post_feedforward_layernorm
+        self.pre_feedforward_layernorm = pre_feedforward_layernorm
+
+    def forward(
+        self,
+        x: Tensor,
+        mask: Optional[Tensor] = None,
+        input_pos: Optional[Tensor] = None,
+    ) -> Tensor:
+        """
+        Args:
+            x (Tensor): input tensor with shape
+                [batch_size x seq_length x embed_dim]
+            mask (Optional[Tensor]): Optional tensor which contains the mask.
+                Only used during inference. Default is None.
+            input_pos (Optional[Tensor]): Optional tensor which contains the position
+                of the current token. This is only used during inference. Default is None
+
+        Returns:
+            Tensor: output tensor with same shape as input
+                [batch_size x seq_length x embed_dim]
+
+        Notation used for tensor shapes:
+            - b: batch size
+            - s: sequence length
+            - d: embed dim
+
+        TODO:
+            - Make position of norm configurable
+        """
+        # Input tensor and attention output have the same shape
+        # [b, s, d]
+        # Norm applied before self-attention
+        attn_out = self.attn(self.sa_norm(x), mask, input_pos)
+        attn_out = self.mlp_norm(attn_out)
+        # Residual connection; shape: [b, s, d]
+        h = attn_out + x
+
+        # Norm applied before the feedforward layer
+        mlp_out = self.mlp(self.pre_feedforward_layernorm(h))
+        mlp_out = self.post_feedforward_layernorm(mlp_out)
         # Residual connection; shape: [b, s, d]
         out = h + mlp_out
         return out

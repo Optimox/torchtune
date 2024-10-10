@@ -12,6 +12,7 @@ from .lr_schedulers import get_cosine_schedule_with_warmup  # noqa
 from .position_embeddings import RotaryPositionalEmbeddings  # noqa
 from .rms_norm import RMSNorm  # noqa
 from .transformer import (  # noqa
+    Gemma2TransformerDecoderLayer,
     PyramidTransformerDecoder,
     TransformerDecoder,
     TransformerDecoderLayer,
@@ -29,4 +30,5 @@ __all__ = [
     "TransformerClassifier",
     "reparametrize_as_dtype_state_dict_post_hook",
     "PyramidTransformerDecoder",
+    "Gemma2TransformerDecoderLayer",
 ]

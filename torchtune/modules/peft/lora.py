@@ -127,6 +127,7 @@ class LoRALinear(nn.Module, AdapterModule):
         if self.disabled:
             return out
         lora_out = self.lora_a(self.dropout(x))
+        # lora_out = self.lora_a(x)
         lora_out = (self.alpha / self.rank) * self.lora_b(lora_out)
         return out + lora_out
 
@@ -142,4 +143,5 @@ def _lora_b_init_params(x: nn.Linear) -> None:
     """
     Initialize LoRA B weight to zeros.
     """
+    # nn.init.kaiming_uniform_(x.weight, a=math.sqrt(5))
     nn.init.zeros_(x.weight)

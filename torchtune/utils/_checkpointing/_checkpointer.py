@@ -407,7 +407,7 @@ class FullModelHFCheckpointer(_CheckpointerInterface):
                 num_heads=self._config["num_attention_heads"],
                 num_kv_heads=self._config["num_key_value_heads"],
                 dim=self._config["hidden_size"],
-                head_dim=self._config["head_dim"],
+                head_dim=self._config.get("head_dim", None),
             )
 
         if self._adapter_checkpoint:
